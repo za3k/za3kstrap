@@ -23,8 +23,8 @@ def command_help(code=0):
     print(HELP)
     sys.exit(code)
 
-def command_lint_packages(verbose=False, silent=False):
-    sub.lint_packages.main(quiet=(not verbose), silent=silent)
+def command_lint_packages(verbose=False, silent=False, make_changes=True, interactive=True):
+    sub.lint_packages.main(quiet=(not verbose), silent=silent, make_changes=make_changes, interactive=interactive)
 
 def command_update_config():
     command_not_implemented()
