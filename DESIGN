@@ -1,0 +1,69 @@
+== In this repo ==
+
+za3kstrap binary
+    a. 'za3kstrap build-chroot [--skip-state|--with-local-state|*--with-rsync-state] CHROOT' installs a long list of things
+        - 'za3kstrap build-chroot CHROOT' can be run from outside an Arch install, to set up a chroot to look like the config
+    b. 'za3kstrap test-repro'. runs 'bootstrap' on a tmpdir, compares to the current working setup
+        INGREDIENTS, [CONFIG], [STATE], HOST -> bool success, list of problem files
+    c. 'za3kstrap lint [--fast]'.
+        INGREDIENTS, [CONFIG], [STATE], HOST -> UPDATED_INGREDIENTS, [UPDATED_CONFIG], [UPDATED_STATE], bool success, list of problems
+
+        - does some quicker checks
+            - 'za3kstrap lint-packages' 
+            - (optional) if 'dotfiles' is installed, runs the dotfiles linter
+            - (optional) if 'projects' is installed, runs the projects linter
+        - runs 'za3kstrap test-repro' and reports any differences. (takes ~2 min in RAM)
+        - if the full lint passes, everything should be guaranteed fully restorable
+
+    d. 'za3kstrap update-config TARGET' copies config files to a given directory. for use in making a restore, or maintaining a git repo.
+        INGREDIENTS, [CONFIG] -> UPDATED_CONFIG
+    #e. 'za3kstrap update-state TARGET' copies non-config restore files to a given directory. not used, will add if needed.
+    #    INGREDIENTS, [STATE] -> UPDATED_STATE
+    f. 'za3kstrap lint-packages'. tests the list of installed packages is reasonable.
+        HOST, PACKAGE_LIST -> UPDATED_PACKAGE_LIST
+    #g. 'za3kstrap make-packages'. generates a list of installed packages
+    #    HOST -> PACKAGE_LIST
+    #h. "za3kstrap make-restore [--skip-state|--with-local-state|*--with-rsync--state] [--package-state] [TARGET]" packages together everything needed for a restore into a single directory
+
+== For each server ==
+
+Ingredients List. (edited by hand)
+    list of installed packages (optional)
+    list of 'omitted' directories: directories to neither back up, or restore. example /var/tmp
+    list of 'state' directores: directories to back up and restore, but which change frequently.
+    list of 'config' files/directories: system files which have changes since install. example, /etc/ssh/sshd_config. includes both 'public' config and private persistent keys.
+Recipe. (generated from live machine + ingredients list)
+    + list of installed packages (mandatory, generated if not present)
+        arch packages
+        TODO: pip, npm, 
+    = list of 'omitted' directories
+    = list of 'state' directores
+    - list of 'config' files/directories
+    + actual config files
+        _contents_ (typically from /etc) which has changed since install
+        enabled systemd units (as symlinks)
+        ssh keys (to allow restore etc)
+    + restore.sh file
+Dish (conceptual, not used)
+    = list of installed packages
+    = restore.sh file
+    = actual config files
+    - list of 'omitted' directories--directories to neither back up, or restore
+    - list of 'state' directores--directories to back up and restore, but which change frequently.
+    + contents of 'state' directories
+        typically in /home
+        installed datasets
+        checked out git directories
+        steam game install (if not omitted) + savegames
+        documents folder
+
+- Daily, we lint the ingredients list and report errors. We also lint it regularly and prompt the user to correct problems or autocorrect them.
+- 
+
+We will check ingredients into git, one repo for all servers. Recipe will be generated into a special directory and saved as part of the usual backup procedure. Dish will not be generated at all.
+
+For backup, 'recipe' is generated and put in a a key directory, then the entire root drive is backed up, omitting 'omitted'.
+
+For reproduction, we use 'recipe' to repro, and then rsync, excluding 'state' directories and look for changes.
+
+Credits: This project was expired by 'blueprint', which is unmaintained and I never used. I wanted a version that worked for Arch Linux.
