@@ -29,7 +29,10 @@ def done(quiet=True):
 HOSTNAME=socket.gethostname()
 def get_package_file(file=None):
     if file is None:
-        file = "/home/zachary/.packages/{}".format(HOSTNAME)
+        for path in ["/home/zachary/.packages/{}", "/home/zachary/.ingredients/{}/PACKAGES"]:
+            file = path.format(HOSTNAME)
+            if os.path.exists(file):
+                break
     packages, groups = [], []
     with open(file) as f:
         for line in f:
