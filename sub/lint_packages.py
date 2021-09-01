@@ -4,21 +4,23 @@ import os, socket, subprocess, sys
 from collections import defaultdict
 
 problems = 0
-def fail(msg):
+def fail(msg, quiet=True):
     global problems
     problems += 1
     print("FATAL", msg)
     sys.exit(1)
-def warn(msg):
+def warn(msg, quiet=True):
     global problems
     problems += 1
     print("WARN", msg)
-def ok(msg):
-    print("OK", msg, file=sys.stderr)
-def done():
+def ok(msg, quiet=True):
+    if not quiet:
+        print("OK", msg, file=sys.stderr)
+def done(quiet=True):
     global problems
     if problems == 0:
-        print("ok.", file=sys.stderr)
+        if not quiet:
+            print("ok.", file=sys.stderr)
         sys.exit(0)
     else:
         print("dotfile linter: {} problems found".format(problems))
@@ -61,13 +63,7 @@ def get_group_contents(groups):
         packages[group].add(package)
     return packages
 
-if __name__ == "__main__":
-    global verbose
-    verbose=True
-    main(os.environ.get("ARCH_PACKAGEFILE"))
-    done()
-
-def main(package_file=None):
+def lint(package_file=None):
     expected_packages, expected_groups = get_package_file(package_file)
     #print("Packages/groups read: ", expected_packages, expected_groups)
     group_packages = get_group_contents(expected_groups)
@@ -81,17 +77,17 @@ def main(package_file=None):
 
     for installed in sorted(actual_explicit_packages):
         if installed in expected_flat_packages:
-            ok("Match: {}".format(installed))
+            yield ok, "Match: {}".format(installed)
         else:
-            warn("Unexpected package: {}".format(installed))
+            yield warn, "Unexpected package: {}".format(installed)
     for expected in expected_packages:
         if expected in actual_packages:
             if expected in actual_explicit_packages:
                 pass # already said "OK"
             else:
-                warn("Package installed, but not explicitly: {}".format(expected))
+                yield warn, "Package installed, but not explicitly: {}".format(expected)
         else:
-            warn("Expected package not installed: {}".format(expected))
+            yield warn, "Expected package not installed: {}".format(expected)
     for group in expected_groups:
         group_ok = True
         for expected in group_packages[group]:
@@ -100,6 +96,24 @@ def main(package_file=None):
             else:
                 group_ok = False
         if group_ok:
-            ok("Group: {}".format(group))
+            yield ok, "Group: {}".format(group)
         else:
-            warn("Some packages not present: {}".format(group))
+            yield warn, "Some packages not present: {}".format(group)
+
+def lint_ok(*args, **kwargs):
+    for level, problem in lint(*args, **kwargs):
+        if level == ok:
+            pass
+        else:
+            return False
+    return True
+
+def main(package_file=None, quiet=True):
+    for level, problem in lint(package_file=package_file):
+        if quiet and level==ok:
+            continue
+        level(problem, quiet=quiet)
+    done(quiet=quiet)
+
+if __name__ == "__main__":
+    main(os.environ.get("ARCH_PACKAGEFILE"), quiet=False)

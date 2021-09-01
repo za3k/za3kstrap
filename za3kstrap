@@ -1,12 +1,13 @@
 #!/bin/env python3
 import sys
-import sub
 
 HELP = """Usage: za3kstrap SUBCOMMAND ...
     za3kstrap build-chroot
     za3kstrap help
         Display this message
     za3kstrap lint-packages
+        Check whether the list of packages matches ~/.packages/<hostname>
+            -v Verbose output. Print passed checks as well as failed checks.
     za3kstrap lint
     za3kstrap make-packages
         Output Arch Linux packages in a format accepted by build-chroot, one per line.
@@ -19,9 +20,9 @@ def command_help(code=0):
     print(HELP)
     sys.exit(code)
 
-def command_lint_packages():
+def command_lint_packages(verbose=False):
     import sub.lint_packages
-    sub.lint_packages.main("/home/zachary/.packages/juice")
+    sub.lint_packages.main(quiet=(not verbose))
 
 def command_update_config():
     command_not_implemented()
@@ -49,15 +50,25 @@ def command_not_implemented():
     sys.exit(1)
 
 if __name__ == '__main__':
-    args = sys.argv[1:]
 
+    # Parse subcommand
+    args = sys.argv[1:]
     if len(args) == 0:
         command_help(code=1)
     subcommand, args = "command_"+args[0].replace("-", "_"), args[1:]
     subcommand = globals().get(subcommand)
     if subcommand is None:
-        command_help(*args, code=1)
+        command_help(code=1)
 
-    # TODO: Any cross-command arg parsing
+    # Parse command-line flags
+    options = {}
+    positional = []
+    while len(args) > 0:
+        arg, *args = args
+        if arg == "-v":
+            options["verbose"] = True
+        else:
+            positional.append(arg)
 
-    subcommand(*args)
+    # Run that command
+    subcommand(*positional, **options)
