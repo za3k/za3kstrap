@@ -1,5 +1,6 @@
 #!/bin/env python3
 import sys
+import sub
 
 HELP = """Usage: za3kstrap SUBCOMMAND ...
     za3kstrap build-chroot
@@ -19,7 +20,8 @@ def command_help(code=0):
     sys.exit(code)
 
 def command_lint_packages():
-    command_not_implemented()
+    import sub.lint_packages
+    sub.lint_packages.main("/home/zachary/.packages/juice")
 
 def command_update_config():
     command_not_implemented()
