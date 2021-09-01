@@ -1,5 +1,6 @@
 #!/bin/env python3
 import sys
+import sub.lint_packages
 
 HELP = """Usage: za3kstrap SUBCOMMAND ...
     za3kstrap build-chroot
@@ -7,10 +8,12 @@ HELP = """Usage: za3kstrap SUBCOMMAND ...
         Display this message
     za3kstrap lint-packages
         Check whether the list of packages matches ~/.packages/<hostname>
-            -v Verbose output. Print passed checks as well as failed checks.
+            -v,--verbose Verbose output. Print passed checks as well as failed checks.
     za3kstrap lint
+        Check whether the ingredients list can generate the current system image.
+            -f,--fast Only do quick checks. <10ms
     za3kstrap make-packages
-        Output Arch Linux packages in a format accepted by build-chroot, one per line.
+        TODO: Output Arch Linux packages in a format accepted by build-chroot, one per line.
     za3kstrap make-restore
     za3kstrap test-repro
     za3kstrap update-config
@@ -20,14 +23,14 @@ def command_help(code=0):
     print(HELP)
     sys.exit(code)
 
-def command_lint_packages(verbose=False):
-    import sub.lint_packages
-    sub.lint_packages.main(quiet=(not verbose))
+def command_lint_packages(verbose=False, silent=False):
+    sub.lint_packages.main(quiet=(not verbose), silent=silent)
 
 def command_update_config():
     command_not_implemented()
 
 def command_update_state():
+    # Will do later, not needed
     command_not_implemented()
 
 def command_build_chroot():
@@ -37,12 +40,26 @@ def command_test_repro():
     command_not_implemented()
 
 def command_lint():
-    command_not_implemented()
+    ok = True
+    sys.stderr.write("Linting packages... ")
+    if sub.lint_packages.main(quiet=True, silent=True):
+        sys.stderr.write("ok\n")
+    else:
+        sys.stderr.write("failed\n")
+        ok = False
+        sys.exit(2)
+    print("Linting dotfiles... not implemented", file=sys.stderr)
+    print("Linting projects... not implemented", file=sys.stderr)
+    print("Linting repro (may take a while)... not implemented", file=sys.stderr)
+    print("Lint failed because it is not implemented")
+    sys.exit(1)
 
 def command_make_packages():
+    # Will do later, not needed
     command_not_implemented()
 
 def command_make_restore():
+    # Will do later, not needed
     command_not_implemented()
 
 def command_not_implemented():
@@ -65,8 +82,13 @@ if __name__ == '__main__':
     positional = []
     while len(args) > 0:
         arg, *args = args
-        if arg == "-v":
+        if arg in ("-v", "--verbose"):
             options["verbose"] = True
+        elif arg in ("-q", "--quiet"):
+            options["verbose"] = False
+        elif arg in ("-s", "--silent"):
+            options["verbose"] = False
+            options["silent"] = True
         else:
             positional.append(arg)
 

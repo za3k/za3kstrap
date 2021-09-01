@@ -17,14 +17,15 @@ def ok(msg, quiet=True):
     if not quiet:
         print("OK", msg, file=sys.stderr)
 def done(quiet=True):
+    # Returns whether everything is OK
     global problems
     if problems == 0:
         if not quiet:
             print("ok.", file=sys.stderr)
-        sys.exit(0)
+        return True
     else:
         print("dotfile linter: {} problems found".format(problems))
-        sys.exit(2)
+        return False
 
 HOSTNAME=socket.gethostname()
 def get_package_file(file=None):
@@ -111,12 +112,17 @@ def lint_ok(*args, **kwargs):
             return False
     return True
 
-def main(package_file=None, quiet=True):
+def main(package_file=None, quiet=True, silent=False):
     for level, problem in lint(package_file=package_file):
+        if silent:
+            continue
         if quiet and level==ok:
             continue
         level(problem, quiet=quiet)
-    done(quiet=quiet)
+    return done(quiet=quiet)
 
 if __name__ == "__main__":
-    main(os.environ.get("ARCH_PACKAGEFILE"), quiet=False)
+    if main(os.environ.get("ARCH_PACKAGEFILE"), quiet=False):
+        sys.exit(0)
+    else:
+        sys.exit(2)
