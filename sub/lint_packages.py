@@ -70,9 +70,31 @@ def add_package(package_file, package):
     with open(package_file, "a") as f:
         print(package, file=f)
     return True
+def line_is_package(line, package):
+    line = line.split("#")[0]
+    line = line.strip("*+ \n")
+    return package == line
 def remove_package(package_file, package):
-    print("Not implemented: Remove (comment out) package")
-    return False
+    with open(package_file, "r") as f:
+        lines = [line for line in f]
+    matching_lines = [line for line in lines if line_is_package(line, package)]
+    if len(matching_lines) == 0:
+        print("Package not found to remove (comment out): {}".format(package)) 
+        return False
+    elif len(matching_lines) > 1:
+        print("Multiple copies of package found to remove (comment out): {}".format(package)) 
+        return False
+    assert len(matching_lines) == 1
+    
+    with open(package_file + ".tmp", "w") as outp:
+        with open(package_file, "r") as inp:
+            for line in inp:
+                if line_is_package(line, package):
+                    outp.write("#" + line.rstrip("\n") + " # removed by linter\n")
+                else:
+                    outp.write(line)
+    os.replace(package_file + ".tmp", package_file)
+    return True
 
 @fix_decorator("A=Add package to list, U=Uninstall package, or S=Skip?", "a", "u", "s", default="a")
 def add_or_uninstall_package_fix(package_file, package, choice):
