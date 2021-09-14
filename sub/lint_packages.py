@@ -60,11 +60,13 @@ def fix_decorator(prompt, *choices, default=None):
     return _decorator
 
 def install_package(package):
-    print("Not implemented: Install")
-    return False
+    command = ["yay", "-S", package]
+    subprocess.run(command)
+    return True
 def uninstall_package(package):
-    print("Not implemented: Uninstall")
-    return False
+    command = ["sudo", "pacman", "-Rs", package]
+    subprocess.run(command)
+    return True
 def add_package(package_file, package):
     # TODO: Deal with AUR packages. Right now fix will fail for them.
     with open(package_file, "a") as f:
