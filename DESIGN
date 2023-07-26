@@ -1,3 +1,12 @@
+Runtime process
+
+Added to ~/.bash_profile (via ~/.profile):
+    [ -x ~/.projects/za3kstrap/za3kstrap ] && ~/.projects/za3kstrap/za3kstrap lint-packages
+This looks at list of packages in ~/.ingredients/PACKAGES
+    -> ~/.dot/.ingredients/PACKAGES
+    -> ~/za3kstrap-ingredients/juice/PACKAGES
+
+===OLD DESIGN NOTES===
 == In this repo ==
 
 za3kstrap binary
@@ -66,4 +75,4 @@ For backup, 'recipe' is generated and put in a a key directory, then the entire 
 
 For reproduction, we use 'recipe' to repro, and then rsync, excluding 'state' directories and look for changes.
 
-Credits: This project was expired by 'blueprint', which is unmaintained and I never used. I wanted a version that worked for Arch Linux.
+Credits: This project was inspired by 'blueprint', which is unmaintained and I never used. I wanted a version that worked for Arch Linux.

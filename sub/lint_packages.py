@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # TODO: Check whether the AUR + and * group match
-import os, socket, subprocess, sys
+import os, subprocess, sys
 from collections import defaultdict
+import sub.helpers as helpers
 
 problems = 0
 fixed = 0
@@ -67,8 +68,15 @@ def uninstall_package(package):
     command = ["sudo", "pacman", "-Rs", package]
     subprocess.run(command)
     return True
+def is_aur(package):
+    command = ["pacman", "-Qqm", package] # Already does exact match
+    return subprocess.run(
+        command,
+        stderr=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL).returncode == 0
 def add_package(package_file, package):
-    # TODO: Deal with AUR packages. Right now fix will fail for them.
+    if is_aur(package):
+        package = "+" + package
     with open(package_file, "a") as f:
         print(package, file=f)
     return True
@@ -123,33 +131,6 @@ def install_or_remove_package_fix(package_file, package, choice):
     elif choice == "s":
         return False
 
-HOSTNAME=socket.gethostname()
-def locate_package_file(file=None):
-    for path in [
-        file,
-        "/home/zachary/.packages/{}".format(HOSTNAME),
-        "/home/zachary/.ingredients/{}/PACKAGES".format(HOSTNAME),
-    ]:
-        if path and os.path.exists(path):
-            return path
-    return None
-def load_package_file(package_file):
-    packages, groups = [], []
-    with open(package_file) as f:
-        for line in f:
-            line = line.split("#")[0].strip().lstrip("+")
-            if line == "":
-                continue
-            if line.startswith("*"):
-                groups.append(line[1:])
-            else:
-                packages.append(line)
-    return sorted(packages), sorted(groups)
-def get_package_file(file=None):
-    package_file = locate_package_file(file=file)
-    assert package_file is not None, "Package file not found"
-    return load_package_file(package_file)
-
 # Pacman helper functions
 def get_packages():
     stdout = subprocess.run(["pacman", "-Q"], capture_output=True).stdout.decode("utf8")
@@ -172,13 +153,13 @@ def get_group_contents(groups):
     return packages
 
 def lint(package_file=None):
-    package_file = locate_package_file(package_file)
+    package_file = helpers.locate_package_file(file=package_file)
     assert package_file is not None, "Package file not found"
-    expected_packages, expected_groups = load_package_file(package_file)
+    expected_packages, expected_groups, expected_aur_packages = helpers.load_package_file(package_file)
     #print("Packages/groups read: ", expected_packages, expected_groups)
     group_packages = get_group_contents(expected_groups)
     expected_group_packages = [item for group in group_packages.values() for item in group]
-    expected_flat_packages = sorted(set(expected_packages + expected_group_packages))
+    expected_flat_packages = sorted(set(expected_packages + expected_aur_packages + expected_group_packages))
     #print("Flat packages list: ", expected_flat_packages)
 
     actual_packages = get_packages()
