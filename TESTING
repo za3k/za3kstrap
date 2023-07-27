@@ -1,0 +1,18 @@
+=== Testing build-root incrementally (fast REPL method)
+(1) Make a zfs filesystem
+    sudo ionice -c 3 dd if=/dev/zero of=/repro.img bs=1M status=progress count=80000
+    sudo modprobe zfs
+    sudo zpool create repro /repro.img
+(2) Comment out all task_ lines of build_chroot.main
+(3) Snapshot the empty fs
+    sudo zfs snapshot repro@empty
+(4) Uncomment one line
+    ./za3kstrap build-chroot -v /repro
+(5) Examine the results.
+    If they look good:
+        sudo zfs snapshot repro@another-banger-hell-yeah
+    Otherwise
+        sudo zfs rollback repro@last-good-one
+
+Repeat 4-5 until done.
+

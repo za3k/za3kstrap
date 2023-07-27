@@ -1,81 +1,14 @@
 #!/bin/env python3
-import sys
-import sub.lint_packages
-
-HELP = """Usage: za3kstrap SUBCOMMAND ...
-    za3kstrap build-chroot
-    za3kstrap help
-        Display this message
-    za3kstrap lint-packages
-        Check whether the list of packages matches ~/.packages/<hostname>
-            -v,--verbose Verbose output. Print passed checks as well as failed checks.
-    za3kstrap lint
-        Check whether the ingredients list can generate the current system image.
-            -f,--fast Only do quick checks. <10ms
-    za3kstrap make-packages
-        TODO: Output Arch Linux packages in a format accepted by build-chroot, one per line.
-    za3kstrap make-restore
-    za3kstrap test-repro
-    za3kstrap update-config
-    za3kstrap update-state"""
-
-def command_help(code=0):
-    print(HELP)
-    sys.exit(code)
-
-def command_lint_packages(verbose=False, silent=False, make_changes=True, interactive=True):
-    sub.lint_packages.main(quiet=(not verbose), silent=silent, make_changes=make_changes, interactive=interactive)
-
-def command_update_config():
-    command_not_implemented()
-
-def command_update_state():
-    # Will do later, not needed
-    command_not_implemented()
-
-def command_build_chroot():
-    command_not_implemented()
-
-def command_test_repro():
-    command_not_implemented()
-
-def command_lint():
-    ok = True
-    sys.stderr.write("Linting packages... ")
-    if sub.lint_packages.main(quiet=True, silent=True):
-        sys.stderr.write("ok\n")
-    else:
-        sys.stderr.write("failed\n")
-        ok = False
-        sys.exit(2)
-    print("Linting dotfiles... not implemented", file=sys.stderr)
-    print("Linting projects... not implemented", file=sys.stderr)
-    print("Linting repro (may take a while)... not implemented", file=sys.stderr)
-    print("Lint failed because it is not implemented")
-    sys.exit(1)
-
-def command_make_packages():
-    # Will do later, not needed
-    command_not_implemented()
-
-def command_make_restore():
-    # Will do later, not needed
-    command_not_implemented()
-
-def command_not_implemented():
-    print("That command is not yet implemented")
-    sys.exit(1)
+import logging, sys
+import helpers
 
 if __name__ == '__main__':
-
     # Parse subcommand
     args = sys.argv[1:]
     if len(args) == 0:
         command_help(code=1)
-    subcommand, args = "command_"+args[0].replace("-", "_"), args[1:]
-    subcommand = globals().get(subcommand)
-    if subcommand is None:
-        command_help(code=1)
+    subcommand_name, args = args[0].replace("-", "_"), args[1:]
+    subcommand = helpers.subcommand(subcommand_name)
 
     # Parse command-line flags
     options = {}
@@ -86,11 +19,21 @@ if __name__ == '__main__':
             options["verbose"] = True
         elif arg in ("-q", "--quiet"):
             options["verbose"] = False
+        elif arg in ("-d", "--chroot"):
+            options["root"], *args = args
         elif arg in ("-s", "--silent"):
             options["verbose"] = False
             options["silent"] = True
         else:
             positional.append(arg)
+
+    logging.basicConfig(format="%(message)s")
+    if options.get("verbose"):
+        logging.getLogger().setLevel(logging.DEBUG)
+    elif options.get("silent"):
+        logging.getLogger().setLevel(logging.FATAL)
+    else:
+        logging.getLogger().setLevel(logging.INFO)
 
     # Run that command
     subcommand(*positional, **options)

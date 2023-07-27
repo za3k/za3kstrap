@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # TODO: Check whether the AUR + and * group match
 import os, subprocess, sys
+import helpers
 from collections import defaultdict
-import sub.helpers as helpers
 
 problems = 0
 fixed = 0
@@ -209,9 +209,3 @@ def main(package_file=None, quiet=True, silent=False, make_changes=True, interac
         if fix and make_changes:
             fix(interactive=interactive)
     return done(quiet=quiet)
-
-if __name__ == "__main__":
-    if main(os.environ.get("ARCH_PACKAGEFILE"), quiet=False):
-        sys.exit(0)
-    else:
-        sys.exit(2)

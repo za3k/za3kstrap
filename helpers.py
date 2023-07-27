@@ -1,3 +1,4 @@
+import importlib
 import socket
 import os
 
@@ -29,3 +30,13 @@ def get_package_file(file=None):
     package_file = locate_package_file(file=file)
     assert package_file is not None, "Package file not found"
     return load_package_file(package_file)
+
+def subcommand(name):
+    if name in ["update_config", "test_repro", "update_state", "make_packages", "make_restore"]:
+        print("That command is not yet implemented")
+        sys.exit(1)
+    try:
+        return importlib.import_module("sub."+name).main
+    except ImportError:
+        subcommand("help")(code=1)
+
