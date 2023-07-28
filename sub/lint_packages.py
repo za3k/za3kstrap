@@ -68,6 +68,10 @@ def uninstall_package(package):
     command = ["sudo", "pacman", "-Rs", package]
     subprocess.run(command)
     return True
+def makeexplicit_package(package):
+    command = ["sudo", "pacman", "-D", "--asexplicit", package]
+    subprocess.run(command)
+    return True
 def is_aur(package):
     command = ["pacman", "-Qqm", package] # Already does exact match
     return subprocess.run(
@@ -131,6 +135,15 @@ def install_or_remove_package_fix(package_file, package, choice):
     elif choice == "s":
         return False
 
+@fix_decorator("E=Mark as explicitly installed, R=Remove from package list, or S=Skip?", "e", "r", "s", default="e")
+def makeexplicit_or_remove_package_fix(package_file, package, choice):
+    if choice == "e":
+        return makeexplicit_package(package)
+    elif choice == "r":
+        return remove_package(package_file, package)
+    elif choice == "s":
+        return False
+
 # Pacman helper functions
 def get_packages():
     stdout = subprocess.run(["pacman", "-Q"], capture_output=True).stdout.decode("utf8")
@@ -176,7 +189,7 @@ def lint(package_file=None):
             if expected in actual_explicit_packages:
                 pass # already said "OK"
             else:
-                yield warn, "Package installed, but not explicitly: {}".format(expected), install_package_fix(package_file, expected)
+                yield warn, "Package installed, but not explicitly: {}".format(expected), makeexplicit_or_remove_package_fix(package_file, expected)
         else:
             yield warn, "Expected package not installed: {}".format(expected), install_or_remove_package_fix(package_file, expected)
     for group in expected_groups:
