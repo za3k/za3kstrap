@@ -7,6 +7,7 @@ import logging
 import os
 import shlex
 import subprocess
+import time
 
 def shell_quote(cmd):
     return " ".join(shlex.quote(arg) for arg in cmd)
@@ -48,9 +49,11 @@ def task_update_host():
     logging.info("packages: update host")
     run(["pacman", "-Syu"], sudo=True)
 
+    # Remove orphans? sudo pacman -Qqttd | sudo pacman -Rns -
+
 def task_copy_cache(root):
     logging.info("packages: cleanup host cache")
-    run(["pacman", "-Sc"], sudo=True)
+    run(["pacman", "-Sc", "--noconfirm"], sudo=True)
     logging.info("packages: copy host cache")
     target = os.path.join(root, "var/cache/pacman/pkg")
     logging.debug(target)
@@ -76,8 +79,8 @@ def task_install_regular_packages(root, package_file=None):
     run(["pacstrap", "-c", root] + packages + groups, sudo=True)
 
 def task_install_yay(root):
-    yay_package = glob_one("~/.cache/yay/yay/*.pkg.tar.zst") # Copy an existing install if we have it
-    if False: #yay_package:
+    yay_package = glob_one("~/.cache/yay/yay-git/*.pkg.tar.zst") # Copy an existing install if we have it
+    if yay_package:
         logging.info("packages: copy yay package from host")
         run(["cp", yay_package, os.path.join(root, "var/cache/pacman/pkg")], sudo=True)
     else:
@@ -87,11 +90,11 @@ def task_install_yay(root):
                         ["cd", build_dir],
                         ["env", "GOCACHE=/tmp", "makepkg"], # Don't try to write to /, nobody's homedir
                         user='nobody')
-        yay_package = glob_chroot(root, build_dir, "yay-*.pkg.tar.zst")
+        yay_package = glob_chroot(root, build_dir, "yay-git-*.pkg.tar.zst")
         in_chroot(root, ["cp", yay_package, "/var/cache/pacman/pkg"])
         in_chroot(root, ["rm", "-r", build_dir])
     logging.info("packages: install yay using ABS")
-    yay_package = glob_chroot(root, "/var/cache/pacman/pkg", "yay-*.pkg.tar.zst")
+    yay_package = glob_chroot(root, "/var/cache/pacman/pkg", "yay-git-*.pkg.tar.zst")
     in_chroot(root, ["pacman", "-U", "--noconfirm", yay_package])
 
 def task_make_aur_user(root):
@@ -118,10 +121,23 @@ def task_install_aur_packages(root, package_file=None):
         "--noconfirm", # auto-install and accept PGP keys
     ] + aur_packages, user='aur')
 
-def main(root, package_file=None, silent=None, verbose=None):
+def with_timer(name, f, elapsed={}):
+    def inner(*args, **vargs):
+        start = time.perf_counter()
+        ret = f(*args, **vargs)
+        elapsed[name] = time.perf_counter() - start
+        print(elapsed)
+        return ret
+    return inner
+
+
+for x in [x for x in globals() if x.startswith("task_")]:
+    globals()[x] = with_timer(x, globals()[x])
+
+def main(root, package_file=None, **options):
     with task_bind_mount(root):
-        if False:
-            task_update_host()
+        if True:
+            task_update_host() # So we can copy the cache better
             task_copy_cache(root)
             task_install_regular_packages(root, package_file=package_file)
             task_install_yay(root)

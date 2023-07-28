@@ -37,3 +37,5 @@ if __name__ == '__main__':
 
     # Run that command
     subcommand(*positional, **options)
+    #import cProfile
+    #cProfile.run("subcommand(*positional, **options)", 'restats')

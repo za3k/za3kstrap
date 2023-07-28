@@ -6,6 +6,14 @@ This looks at list of packages in ~/.ingredients/PACKAGES
     -> ~/.dot/.ingredients/PACKAGES
     -> ~/za3kstrap-ingredients/juice/PACKAGES
 
+za3kstrap build-chroot <chroot>
+
+sudo watch za3kstrap compare-chroot <chroot>
+    To fix problems:
+        (1) Ignore something: Edit DIRS
+        (2) Add something: sudo cp -ra --parents /usr/bin/wakeup ~/.ingredients/juice/config
+        (3) Manually fix a local thing: Edit local files
+
 ===OLD DESIGN NOTES===
 == In this repo ==
 
