@@ -1,6 +1,7 @@
 import os
 import dir_config
 import helpers
+import subprocess
 
 def parallel_walk(top1, top2, relative=""):
     """
@@ -45,10 +46,29 @@ def differences(top1, top2, config, ignore="i"):
                 #different.add(rel)
                 #rel = os.path.dirname(rel)
 
+def get_owner(path):
+    try:
+        return subprocess.check_output(["pacman", "-Qoq", path], stderr=subprocess.DEVNULL).decode("utf8").strip()
+    except subprocess.CalledProcessError:
+        return "none"
+
+def get_chroot_owner(chroot, path):
+    try:
+        return subprocess.check_output(["sudo", "arch-chroot", chroot, "pacman", "-Qoq", path], stderr=subprocess.DEVNULL).decode("utf8").strip()
+    except subprocess.CalledProcessError:
+        return "none"
+
 def main(chroot, root="/", **options):
     config = dir_config.read_config()
     special = helpers.locate_config_dir()
     for p1, p2, rel in differences(root, chroot, config, ignore="is"):
         c = config.classify(rel)
-        if not os.path.exists(os.path.join(special, rel)):
-            print("{} {} /{}".format("fd"[(p1 or p2).is_dir(follow_symlinks=False)], c, rel))
+        if not os.path.exists(os.path.join(special, rel)) and not os.path.islink(os.path.join(special, rel)):
+            direction = "?<>="[bool(p1)*2+bool(p2)]
+            if (p1 or p2).is_symlink():                     typec="s"
+            elif (p1 or p2).is_dir(follow_symlinks=False):  typec="d"
+            elif (p1 or p2).is_file(follow_symlinks=False): typec="f"
+            else:                                           typec="?"
+            if p1: owner = get_owner(p1)
+            else:  owner = get_chroot_owner(chroot, rel)
+            print("{} {} {} /{} (owner: {})".format(direction, typec, c, rel, owner))
