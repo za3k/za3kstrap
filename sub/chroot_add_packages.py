@@ -45,21 +45,6 @@ def glob_one(path):
     res = glob.glob(os.path.expanduser(path))
     return res[0] if res else None
 
-def task_update_host():
-    logging.info("packages: update host")
-    run(["pacman", "-Syu"], sudo=True)
-
-    # Remove orphans? sudo pacman -Qqttd | sudo pacman -Rns -
-
-def task_copy_cache(root):
-    logging.info("packages: cleanup host cache")
-    run(["pacman", "-Sc", "--noconfirm"], sudo=True)
-    logging.info("packages: copy host cache")
-    target = os.path.join(root, "var/cache/pacman/pkg")
-    logging.debug(target)
-    run(["mkdir", "-p", target], sudo=True)
-    run(["cp", "-a", "-T", "/var/cache/pacman/pkg", target], sudo=True)
-
 @contextlib.contextmanager
 def task_bind_mount(root):
     if run(["mountpoint", "-q", root]).returncode == 0:
@@ -72,6 +57,24 @@ def task_bind_mount(root):
         # Unbind /repro
         logging.info("chroot: undisguising root as a mount")
         run(["sudo", "umount", "-t", "bind", "-q", root])
+
+def task_update_host():
+    logging.info("packages: update host")
+    run(["pacman", "-Syu"], sudo=True)
+    # Remove orphans? sudo pacman -Qqttd | sudo pacman -Rns -
+    # Host should already have: yay -Y --save --removemake
+
+def copy(root, relpath):
+    target = os.path.join(root, relpath)
+    logging.debug(target)
+    run(["mkdir", "-p", target], sudo=True)
+    run(["cp", "-a", "-T", "/"+relpath, target], sudo=True)
+def task_copy_cache(root):
+    logging.info("packages: cleanup host cache")
+    run(["pacman", "-Sc", "--noconfirm"], sudo=True)
+    logging.info("packages: copy host cache")
+    copy(root, "var/cache/pacman/pkg")
+    copy(root, "var/lib/pacman/sync")
 
 def task_install_regular_packages(root, package_file=None):
     logging.info("packages: install from core/extra/multilib")
@@ -122,7 +125,7 @@ def task_install_aur_packages(root, package_file=None):
         "--removemake", # Remove make dependencies
         "--noconfirm", # auto-install and accept PGP keys
     ] + aur_packages, user='aur')
-    in_chroot(root, ["pacman", "-Sc", "--noconfirm"])
+    in_chroot(root, ["pacman", "-Sc", "--noconfirm"]) # Just make extra-sure make dependencies are gone
 
 def with_timer(name, f, elapsed={}):
     def inner(*args, **vargs):
@@ -132,8 +135,6 @@ def with_timer(name, f, elapsed={}):
         logging.info(elapsed)
         return ret
     return inner
-
-
 for x in [x for x in globals() if x.startswith("task_")]:
     globals()[x] = with_timer(x, globals()[x])
 

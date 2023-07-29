@@ -25,8 +25,8 @@ def parallel_walk(top1, top2, relative=""):
         yield e1, e2, r
 
 def sameFile(fileA, fileB):
-    #if os.path.getsize(fileA) != os.path.getsize(fileB):
-    #    return False
+    if os.path.getsize(fileA) != os.path.getsize(fileB):
+        return False
     return True
 def differences(top1, top2, config, ignore="i"):
     different = set()
