@@ -79,23 +79,24 @@ def task_install_regular_packages(root, package_file=None):
     run(["pacstrap", "-c", root] + packages + groups, sudo=True)
 
 def task_install_yay(root):
-    yay_package = glob_one("~/.cache/yay/yay-git/*.pkg.tar.zst") # Copy an existing install if we have it
+    yay_package = glob_one("~/.cache/yay/yay/*.pkg.tar.zst") # Copy an existing install if we have it
     if yay_package:
         logging.info("packages: copy yay package from host")
         run(["cp", yay_package, os.path.join(root, "var/cache/pacman/pkg")], sudo=True)
     else:
         logging.info("packages: build yay from PKGBUILD")
-        build_dir="/var/tmp/yay-git"
-        in_chroot(root, ["git", "clone", "https://aur.archlinux.org/yay-git.git", build_dir],
+        build_dir="/var/tmp/yay"
+        in_chroot(root, ["git", "clone", "https://aur.archlinux.org/yay.git", build_dir],
                         ["cd", build_dir],
                         ["env", "GOCACHE=/tmp", "makepkg"], # Don't try to write to /, nobody's homedir
                         user='nobody')
-        yay_package = glob_chroot(root, build_dir, "yay-git-*.pkg.tar.zst")
+        yay_package = glob_chroot(root, build_dir, "yay-*.pkg.tar.zst")
         in_chroot(root, ["cp", yay_package, "/var/cache/pacman/pkg"])
         in_chroot(root, ["rm", "-r", build_dir])
     logging.info("packages: install yay using ABS")
-    yay_package = glob_chroot(root, "/var/cache/pacman/pkg", "yay-git-*.pkg.tar.zst")
+    yay_package = glob_chroot(root, "/var/cache/pacman/pkg", "yay-*.pkg.tar.zst")
     in_chroot(root, ["pacman", "-U", "--noconfirm", yay_package])
+    in_chroot(root, ["rm", yay_package])
 
 def task_make_aur_user(root):
     logging.info("packages: create aur user")
@@ -113,6 +114,7 @@ def task_copy_cache_aur(root):
 def task_install_aur_packages(root, package_file=None):
     logging.info("packages: install from aur")
     packages, groups, aur_packages = helpers.get_package_file(package_file)
+    aur_packages = sorted(set(aur_packages) - {"yay-git", "yay"}) # No need to reinstall yay!
     in_chroot(root, ["yay", "-S", 
         #"--answerclean", "All", # Do a clean install of everything
         "--answerclean", "None",
@@ -120,13 +122,14 @@ def task_install_aur_packages(root, package_file=None):
         "--removemake", # Remove make dependencies
         "--noconfirm", # auto-install and accept PGP keys
     ] + aur_packages, user='aur')
+    in_chroot(root, ["pacman", "-Sc", "--noconfirm"])
 
 def with_timer(name, f, elapsed={}):
     def inner(*args, **vargs):
         start = time.perf_counter()
         ret = f(*args, **vargs)
         elapsed[name] = time.perf_counter() - start
-        print(elapsed)
+        logging.info(elapsed)
         return ret
     return inner
 
@@ -136,14 +139,13 @@ for x in [x for x in globals() if x.startswith("task_")]:
 
 def main(root, package_file=None, **options):
     with task_bind_mount(root):
-        if True:
-            task_update_host() # So we can copy the cache better
-            task_copy_cache(root)
-            task_install_regular_packages(root, package_file=package_file)
-            task_install_yay(root)
+        task_update_host() # So we can copy the cache better
+        task_copy_cache(root)
+        task_install_regular_packages(root, package_file=package_file)
+        task_install_yay(root)
 
-            task_make_aur_user(root)
-            task_copy_cache_aur(root)
-            task_install_aur_packages(root, package_file=package_file)
+        task_make_aur_user(root)
+        task_copy_cache_aur(root)
+        task_install_aur_packages(root, package_file=package_file)
         # Set up config files
         #task_set_locale(root)
