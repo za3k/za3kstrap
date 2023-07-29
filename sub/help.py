@@ -2,7 +2,7 @@ import sys
 
 HELP = """Usage: za3kstrap SUBCOMMAND ...
     za3kstrap make-packages
-        TODO: Print packages found on the host, in the PACKAGES format, one per line.
+        Print packages found on the host, in the PACKAGES format, one per line.
 
     za3kstrap list-packages (all|packages|regular|aur|groups)
         Prints packages found in the PACKAGES file, one per line.

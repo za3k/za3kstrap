@@ -61,9 +61,6 @@ def locate_config_dir(file=None):
             return path
 
 def subcommand(name):
-    if name in ["update_config", "test_repro", "update_state", "make_packages", "make_restore"]:
-        print("That command is not yet implemented")
-        sys.exit(1)
     try:
         return importlib.import_module("sub."+name).main
     except ImportError as e:
