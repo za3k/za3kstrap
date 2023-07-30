@@ -33,13 +33,14 @@ When performing a backup or restore
 - The "ignore" class is ignored. We don't need to back up or restore /tmp
 - The "config" class is treated semantically as possible. We'd like a list of
   packages to install, not a huge number of files to copy.
-- "state" is not examined. It's blindly treated as files to copy or restore.
+- The "state" is not examined. It's blindly treated as files to copy or restore.
 
-Specifically, za3kstrap breaks down the **recipe** as follows:
+za3kstrap breaks down a **recipe** as follows:
 - DIRS, an explanation of which paths are "config", "state", or "ignore"
-- PACKAGES, a list of installed packages (normal, aur/abs, and package groups)
-- 'config/', a directory of config files which don't match the system defaults
-  and should be used in their place
+- ("config" class) PACKAGES, a list of installed packages (normal, AUR
+  packages, and package groups)
+- ("config" class) 'config.tar', config files which don't match the system
+  defaults and should be used in their place
 
 ### Linter examples
 
