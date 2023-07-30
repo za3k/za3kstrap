@@ -4,7 +4,7 @@ HELP = """Usage: za3kstrap SUBCOMMAND ...
     za3kstrap make-packages
         Print packages found on the host, in the PACKAGES format, one per line.
 
-    za3kstrap list-packages (all|packages|regular|aur|groups)
+    za3kstrap list-packages [all|packages|regular|aur|groups]
         Prints packages found in the PACKAGES file, one per line.
 
     za3kstrap update-config
@@ -17,11 +17,11 @@ HELP = """Usage: za3kstrap SUBCOMMAND ...
         TODO: Generate a folder containing a script that can chroot-build a working system
 
     za3kstrap test-repro [STATE-OPTIONS] CHROOT
-        Check whether the ingredients list can generate the current system image.
+        TODO: Check whether the ingredients list can generate the current system image.
         Calls in order: chroot-build, chroot-compare
 
     za3kstrap chroot-build [STATE-OPTIONS] CHROOT
-        Calls: chroot-add-packages, chroot-add-config, chroot-add-state
+        TODO: Calls: chroot-add-packages, chroot-add-config, chroot-add-state
     za3kstrap chroot-add-packages CHROOT
         Install Arch Linux packages from ~/.ingredients/<hostname>/PACKAGES
     za3kstrap chroot-add-config CHROOT
@@ -55,6 +55,19 @@ HELP = """Usage: za3kstrap SUBCOMMAND ...
 
     za3kstrap help
         Display this message
+
+    General options:
+        -v, --verbose: Increase verbosity
+        -q, --quiet:   Reduce verbosity
+        -s, --silent:  Don't output anything to stdout/stderr
+    chroot options:
+        CHROOT:        Path to the chroot to build, update, or check
+    linter options
+        -f, --fast:    Only run very fast linters (<100ms). Useful for regular checks
+        --full:        Run all linters.
+        --periodic:    (Default) Always run fast linters, and run other linters if it's been a while.
+    state options:
+        TODO
 """
 
 def main(code=0):

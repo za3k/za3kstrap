@@ -3,39 +3,49 @@ import logging, sys
 import helpers
 
 if __name__ == '__main__':
-    # Parse subcommand
-    args = sys.argv[1:]
-    if len(args) == 0:
-        command_help(code=1)
-    subcommand_name, args = args[0].replace("-", "_"), args[1:]
-    subcommand = helpers.subcommand(subcommand_name)
+    # Defaults
+    options = {
+        "fast": False,
+        "verbosity": 2,
+        "lint_depth": "periodic",
+    }
+    positional = []
 
     # Parse command-line flags
-    options = {}
-    positional = []
+    args = sys.argv[1:]
     while len(args) > 0:
         arg, *args = args
+        # Arguments that take no parameters
         if arg in ("-v", "--verbose"):
-            options["verbose"] = True
+            options["verbosity"]+=1
         elif arg in ("-q", "--quiet"):
-            options["verbose"] = False
-        elif arg in ("-d", "--chroot"):
-            options["root"], *args = args
+            options["verbosity"]-=1
         elif arg in ("-s", "--silent"):
-            options["verbose"] = False
-            options["silent"] = True
+            options["verbosity"]=0
+        elif arg in ("-f", "--fast"):
+            options["lint_depth"] = "fast"
+        elif arg in ("--full",):
+            options["lint_depth"] = "full"
+        elif arg in ("--periodic"):
+            options["lint_depth"] = "periodic"
+        # Positional arguments
         else:
             positional.append(arg)
 
+    # Parse subcommand
+    if len(positional) == 0:
+        helpers.subcommand("help")(code=1)
+    subcommand_name, positional = positional[0].replace("-", "_"), positional[1:]
+    subcommand = helpers.subcommand(subcommand_name)
+
+    # General options not specific to a subcommand
     logging.basicConfig(format="%(message)s")
-    if options.get("verbose"):
+    if options.get("verbosity") >= 3:
         logging.getLogger().setLevel(logging.DEBUG)
-    elif options.get("silent"):
-        logging.getLogger().setLevel(logging.FATAL)
-    else:
+    elif 1 <= options.get("verbosity") == 2:
         logging.getLogger().setLevel(logging.INFO)
+    elif options.get("verbosity") == 0:
+        logging.getLogger().setLevel(logging.FATAL)
 
     # Run that command
     subcommand(*positional, **options)
-    #import cProfile
-    #cProfile.run("subcommand(*positional, **options)", 'restats')

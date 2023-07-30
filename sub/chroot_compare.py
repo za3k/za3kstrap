@@ -2,6 +2,7 @@ import os
 import dir_config
 import helpers
 import subprocess
+import sys
 
 def parallel_walk(top1, top2, relative=""):
     """
@@ -25,7 +26,7 @@ def parallel_walk(top1, top2, relative=""):
         yield e1, e2, r
 
 def sameFile(fileA, fileB):
-    if os.path.getsize(fileA) != os.path.getsize(fileB):
+    if fileA.stat(follow_symlinks=False).st_size != fileB.stat(follow_symlinks=False).st_size:
         return False
     return True
 def differences(top1, top2, config, ignore="i"):
@@ -61,6 +62,7 @@ def get_chroot_owner(chroot, path):
 def main(chroot, root="/", **options):
     config = dir_config.read_config()
     special = helpers.locate_config_dir()
+    problems = 0
     for p1, p2, rel in differences(root, chroot, config, ignore="is"):
         c = config.classify(rel)
         if not os.path.exists(os.path.join(special, rel)) and not os.path.islink(os.path.join(special, rel)):
@@ -71,4 +73,7 @@ def main(chroot, root="/", **options):
             else:                                           typec="?"
             if p1: owner = get_owner(p1)
             else:  owner = get_chroot_owner(chroot, rel)
+            problems += 1
             print("{} {} {} /{} (owner: {})".format(direction, typec, c, rel, owner))
+    print("{} differences found".format(problems))
+    sys.exit(problems>0)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import helpers
 
-def main(subset, **options):
+def main(subset='all', **options):
     packages, groups, aur_packages = helpers.get_package_file(options.get("package_file"))
     out = {
         "all": packages + groups + aur_packages,

@@ -132,7 +132,7 @@ def with_timer(name, f, elapsed={}):
         start = time.perf_counter()
         ret = f(*args, **vargs)
         elapsed[name] = time.perf_counter() - start
-        logging.info(elapsed)
+        logging.debug(elapsed)
         return ret
     return inner
 for x in [x for x in globals() if x.startswith("task_")]:

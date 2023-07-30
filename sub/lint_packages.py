@@ -6,23 +6,23 @@ from collections import defaultdict
 
 problems = 0
 fixed = 0
-def fail(msg, quiet=True):
+def fail(msg, verbosity=2):
     global problems
     problems += 1
     print("FATAL", msg)
     sys.exit(1)
-def warn(msg, quiet=True):
+def warn(msg, verbosity=2):
     global problems
     problems += 1
     print("WARN", msg)
-def ok(msg, quiet=True):
-    if not quiet:
+def ok(msg, verbosity=2):
+    if verbosity >= 3:
         print("OK", msg, file=sys.stderr)
-def done(quiet=True):
+def done(verbosity=2):
     # Returns whether everything is OK
     global fixed, problems
     if problems + fixed == 0:
-        if not quiet:
+        if verbosity >= 3:
             print("ok.", file=sys.stderr)
         return True
     elif problems == 0:
@@ -212,13 +212,13 @@ def lint_ok(*args, **kwargs):
             return False
     return True
 
-def main(package_file=None, quiet=True, silent=False, make_changes=True, interactive=True):
+def main(package_file=None, verbosity=1, make_changes=True, interactive=True, **args):
     for level, problem, fix in lint(package_file=package_file):
-        if silent:
+        if 0 == verbosity:
             continue
-        if quiet and level==ok:
+        if 1 == verbosity and level==ok:
             continue
-        level(problem, quiet=quiet)
+        level(problem, verbosity=verbosity)
         if fix and make_changes:
             fix(interactive=interactive)
-    return done(quiet=quiet)
+    return done(verbosity=verbosity)
