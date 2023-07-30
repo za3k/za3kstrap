@@ -35,7 +35,7 @@ When performing a backup or restore
   packages to install, not a huge number of files to copy.
 - The "state" is not examined. It's blindly treated as files to copy or restore.
 
-za3kstrap breaks down a **recipe** as follows:
+za3kstrap breaks down a **blueprint** as follows:
 - DIRS, an explanation of which paths are "config", "state", or "ignore"
 - ("config" class) PACKAGES, a list of installed packages (normal, AUR
   packages, and package groups)
