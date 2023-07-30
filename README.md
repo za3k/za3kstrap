@@ -1,8 +1,13 @@
+(**!WORK IN PROGRESS, NOT YET DONE!**)
 za3kstrap (za3k's bootstrap) is a tool to manage Arch Linux installs.
 
 It maintains a one-to-one correspondence between a working Arch Linux install,
 and a **blueprint**, a small set of config files that can be used to generate
 that working install.
+
+Using blueprints also has the advantage of letting you keep several installs
+in sync with one another, or examining semantic-level differences between
+running systems.
 
 ### Capabilities
 
@@ -17,15 +22,17 @@ that working install.
 
 ### Concepts
 
-Conceptually, za3kstrap splits an install into three classes:
+Conceptually, za3kstrap splits files and directories in an install into
+  three classes:
 - "config". Installed packages, services, config files, code, etc.
-- "state". Working data. Home directories, databases, secret keys.
-- "ignore". Chromium caches, /tmp, logs.
+  Think /etc and /usr.
+- "state". Working data. Home directories, databases, secret keys. Think /home.
+- "ignore". Chromium caches, /tmp, logs. Think /tmp.
 
 When performing a backup or restore
-- "ignore" is ignored entirely. We don't need to back up or restore /tmp
-- "config" is treated as semantically as possible. We'd like a list of packages
-  to install, not a huge number of files to copy.
+- The "ignore" class is ignored. We don't need to back up or restore /tmp
+- The "config" class is treated semantically as possible. We'd like a list of
+  packages to install, not a huge number of files to copy.
 - "state" is not examined. It's blindly treated as files to copy or restore.
 
 Specifically, za3kstrap breaks down the **recipe** as follows:
