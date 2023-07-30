@@ -1,3 +1,70 @@
+za3kstrap (za3k's bootstrap) is a tool to manage Arch Linux installs.
+
+It maintains a one-to-one correspondence between a working Arch Linux install,
+and a **blueprint**, a small set of config files that can be used to generate
+that working install.
+
+### Capabilities
+
+**(not yet done)** za3kstrap is capable of 
+1. taking a running system and extracting a blueprint
+2. taking a blueprint, and creating a running system.
+3. (linters) keeping a blueprint up-to-date with a running system. za3kstrap
+   will note any differences, and intelligently prompt to user to resolve them.
+4. backing up important parts of a running system
+5. restoring a running system after a fault
+6. working with running systems, chroots, hard drives and USBs, and disk images
+
+### Concepts
+
+Conceptually, za3kstrap splits an install into three classes:
+- "config". Installed packages, services, config files, code, etc.
+- "state". Working data. Home directories, databases, secret keys.
+- "ignore". Chromium caches, /tmp, logs.
+
+When performing a backup or restore
+- "ignore" is ignored entirely. We don't need to back up or restore /tmp
+- "config" is treated as semantically as possible. We'd like a list of packages
+  to install, not a huge number of files to copy.
+- "state" is not examined. It's blindly treated as files to copy or restore.
+
+Specifically, za3kstrap breaks down the **recipe** as follows:
+- DIRS, an explanation of which paths are "config", "state", or "ignore"
+- PACKAGES, a list of installed packages (normal, aur/abs, and package groups)
+- 'config/', a directory of config files which don't match the system defaults
+  and should be used in their place
+
+### Linter examples
+
+If you newly install a package, za3kstrap will prompt:
+
+    WARN Unexpected package: mpv
+    A=Add package to list, U=Uninstall package, or S=Skip? (A,u,s)
+
+If you remove a package, za3kstrap will prompt:
+
+    WARN Expected package not installed: mplayer
+    I=Install package, R=Remove from package list, or S=Skip? (i,r,S) 
+
+If you change a config file on the running system, za3kstrap will prompt:
+
+    WARN Modified config file: /etc/fstab
+    M=Modify declarative file, R=Revert system version, D=Show diff, or
+        S=Skip? (M,r,d,s)
+
+If you add a cronjob, za3kstrap will prompt:
+
+    WARN New config file: /etc/cron.daily/backup
+    A=Add declarative file, U=Uninstall file, or S=Skip? (A,u,s)
+
+If you enable a system service, za3kstrap will prompt:
+
+    WARN New config file: /etc/systemd/system/multi-user.target.wants/
+        nullmailer.service
+    A=Add declarative file, U=Uninstall file, or S=Skip? (A,u,s)
+
+### Usage
+
 ```
 Usage: za3kstrap SUBCOMMAND ...
     za3kstrap make-packages
